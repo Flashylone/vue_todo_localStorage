@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>TodoList</title>
+  <script src="./assets/js/vue.js"></script>
+  <style>
+  	.todo-done{
+  		color: #ccc;
+  		text-decoration: line-through;
+  	}
+    #addBtn{
+        width: 100%;
+        height: 32px;
+        font-size: 24px;
+        font-family: sans-serif;
+        margin: 10px 0px;
+        border: 3px solid #ccc;
+        border-radius: 8px;
+        -webkit-box-sizing: border-box;
+        box-sizing: border-box;
+        outline: none;
+    }
+    #addBtn:active{
+        border: 3px solid #0f0;
+    }
+    #addBtn:focus{
+        border: 3px solid #a2e563;
+    }
+    ul{
+        list-style: none;
+        padding: 0;
+    }
+    ul>li{
+        width: 100%;
+        border: none;
+        border-bottom: 1px solid #ccc;
+        padding: 8px 0px;
+    }
+    ul>li>span{
+        color: #ccc;
+        font-size: 12px;
+    }
+    .li-moveout{
+        -webkit-animation: liMoveOut 0.6s ease-in-out 0.1s both;
+        animation: liMoveOut 0.6s ease-in-out 0.1s both;
+    }
+    @-webkit-keyframes liMoveOut{
+        to{
+            opacity: 0;
+            -webkit-transform: translate3d( 100%, 0px, 0px );
+        }
+    }
+    @keyframes liMoveOut{
+        to{
+            opacity: 0;
+            transform: translate3d( 100%, 0px, 0px );
+        }
+    }
+    .li-movein{
+        opacity: 0;
+        -webkit-transform: translate3d( 100%, 0px, 0px );
+        -webkit-animation: liMoveIn 0.6s ease-in-out 0.1s both;
+        animation: liMoveIn 0.6s ease-in-out 0.1s both;
+    }
+    @-webkit-keyframes liMoveIn{
+        to{
+            opacity: 1;
+            -webkit-transform: translate3d( 0%, 0px, 0px );
+        }
+    }
+    @keyframes liMoveIn{
+        to{
+            opacity: 1;
+            transform: translate3d( 0%, 0px, 0px );
+        }
+    }
+  </style>
+</head>
+<body>
+	<section id="app">
+		{{ message }}
+		<div v-hover="vm" id="countLoadLocalStorage">
+			第{{ countLoadLocalStorage }}次进入页面
+		</div>
+		<input type="text" id="addBtn" placeholder="增加代办事项" v-on:keyup.enter="addTodo">
+		<ul class="todo-list">
+			<li v-for="( todo, index ) in todoList" v-bind:class="{ 'li-moveout': todo.isDone }" v-on:click="makeTodoDone( todo, index, $event )">
+				<span>{{ todo.createdAt }}创建</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{{ todo.name }}
+			</li>
+		</ul>
+		<ul class="complete-list">
+			<li v-for="item in completeList" v-bind:class="[{ 'todo-done': item.isDone },{ 'li-movein': item.isMoveIn }]">
+				<span>{{ item.finishedAt }}完成</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{{ item.name }}
+			</li>
+		</ul>
+	</section>
+  <script>
+    // 注册全局的hover指令
+    Vue.directive('hover', function( el, binding ){
+        var timer = null;
+        el.onmouseover = function(){
+            var startTime = new Date();
+            var i = 0;
+
+            timer = setInterval( function(){
+                i++;
+                if( i === 3 ){
+                    clearInterval( timer );
+                    var r = confirm('你想删除我咯？')
+                    if( r === true ){
+                        localStorage.setItem( 'countLoadLocalStorage' , 0 );
+                        binding.value.countLoadLocalStorage = 0;
+                    }
+                }
+            }, 1000);
+        };
+        el.onmouseout = function(){
+            clearInterval( timer );
+        }
+    });
+
+  	var app = new Vue({
+  		el:'#app',
+  		data: {
+  			vm: null,
+  			message: 'love wang yuan',
+  			countLoadLocalStorage: 0,
+  			todoList: [],
+  			completeList:[],
+  			newTodo: null
+  		},
+  		created: function () {
+  			/* body... */
+  			this.vm = this;
+  			// 计算进入页面的次数
+  			this.countingLoad();
+  			this.initList();
+  		},
+  		methods: {
+            // 统计进入页面的次数
+  			countingLoad: function(){
+	  			var count = parseInt(localStorage.getItem( 'countLoadLocalStorage' ));
+	  			if ( count ){
+	  				count += 1;
+		  			this.countLoadLocalStorage = count;
+	  			}else{
+	  				this.countLoadLocalStorage += 1;
+	  				localStorage.setItem( 'countLoadLocalStorage' , this.countLoadLocalStorage );
+	  				return ;
+	  			}
+	  			// created结束后 #countLoadLocalStorage 才会输入count值
+				localStorage.setItem( 'countLoadLocalStorage' , count );
+  			},
+            // 清除进入页面次数
+            // 与注册的directive hover配合使用
+  			clearCountLoad: function(){
+				localStorage.setItem( 'countLoadLocalStorage' , 0 );
+				this.countLoadLocalStorage = 0;
+  			},
+            // 初始化页面，先从本地存储获取
+  			initList: function(){
+  				// 用本地存储，需要跟本地存储进行比较
+  				// 若存在本地缓存，用本地缓存处理
+	  			var list = JSON.parse( localStorage.getItem( 'list' ) );
+	  			if ( list ){
+		  			this.todoList = list.todoList;
+		  			this.completeList = list.completeList;
+	  			}else{
+	  				this.updateLocalStorageList();
+	  			}
+  			},
+            // 增加代办事务
+  			addTodo: function( event ){
+  				var v = this;
+  				var item = {
+  					name: null,
+  					isDone: false,
+                    createdAt: new Date().toLocaleString(),
+                    finishedAt: null
+  				};
+  				var value = event.target.value.trim();
+  				if( value !== ''){
+  					item.name = value;
+  					v.todoList.push( item );
+                    v.updateLocalStorageList();
+                    event.target.value = '';
+                    event.target.blur();
+  				}else{
+  					alert( '什么都不填还想骗？！' )
+  				}
+  			},
+            // 处理代办事务完成
+  			makeTodoDone: function( todo, index, event ){
+  				var v = this;
+  				if( todo.isDone ){
+  					return ;
+  				}else{
+  					var r = confirm( '你确定找汪小苑确定完成的咯？' );
+  					if( r === true ){
+	  					todo.isDone = true;
+                        todo.isMoveIn = false;
+                        todo.finishedAt = new Date().toLocaleString();
+                        setTimeout( function(){
+    	  					v.todoList.splice( index, 1 );
+                            v.addToCompleteList( todo, index );
+                        }, 1200);
+  					}else {
+  						return ;
+  					}
+  				}
+  			},
+            // 在事务完成列表里增加完成的事务
+  			addToCompleteList: function( todo, index ) {
+  				var v = this;
+  				v.completeList.unshift( todo );
+  				v.updateLocalStorageList();
+                todo.isMoveIn = true;
+                setTimeout( function(){
+                    todo.isMoveIn = false;
+                }, 1000 );
+  			},
+            // 更新本地数据
+  			updateLocalStorageList: function(){
+  				var list = {
+                    "todoList": this.todoList,
+                    "completeList": this.completeList
+                }
+                localStorage.setItem( 'list' , JSON.stringify(list) );
+  			}
+  		}
+  	});
+
+  
+  </script>
+</body>
+</html>
