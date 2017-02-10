@@ -5,6 +5,18 @@
   <meta name="viewport" content="width=device-width,maximum-scale=1,minimum-scale=1,user-scalable=no">
   <script src="./assets/js/vue.js"></script>
   <style>
+    html,body,#app{
+        width: 100%;
+        height: 100%;
+        -webkit-box-sizing: border-box;
+        box-sizing: border-box;
+        padding: 0;
+        margin: 0;
+        overflow: hidden;
+    }
+    #app{
+        padding: 5px;
+    }
   	.todo-done{
   		color: #ccc;
   		text-decoration: line-through;
@@ -40,6 +52,10 @@
     ul>li>span{
         color: #ccc;
         font-size: 12px;
+    }
+    #todolistBox{
+        overflow-x: hidden;
+        overflow-y: auto;
     }
     .li-moveout{
         -webkit-animation: liMoveOut 0.6s ease-in-out 0.1s both;
@@ -84,16 +100,19 @@
 			第{{ countLoadLocalStorage }}次进入页面
 		</div>
 		<input type="text" id="addBtn" placeholder="增加代办事项" v-on:keyup.enter="addTodo">
-		<ul class="todo-list">
-			<li v-for="( todo, index ) in todoList" v-bind:class="{ 'li-moveout': todo.isDone }" v-on:click="makeTodoDone( todo, index, $event )">
-				<span>{{ todo.createdAt }}创建</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{{ todo.name }}
-			</li>
-		</ul>
-		<ul class="complete-list">
-			<li v-for="item in completeList" v-bind:class="[{ 'todo-done': item.isDone },{ 'li-movein': item.isMoveIn }]">
-				<span>{{ item.finishedAt }}完成</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{{ item.name }}
-			</li>
-		</ul>
+        <div id="todolistBox">
+            <ul class="todo-list">
+                <li v-for="( todo, index ) in todoList" v-bind:class="{ 'li-moveout': todo.isDone }" v-on:click="makeTodoDone( todo, index, $event )">
+                    <span>{{ todo.createdAt }}创建</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{{ todo.name }}
+                </li>
+            </ul>
+            <ul class="complete-list">
+                <li v-for="item in completeList" v-bind:class="[{ 'todo-done': item.isDone },{ 'li-movein': item.isMoveIn }]">
+                    <span>{{ item.finishedAt }}完成</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{{ item.name }}
+                </li>
+            </ul>
+        </div>
+		
 	</section>
   <script>
     // 注册全局的hover指令
@@ -136,6 +155,7 @@
   			// 计算进入页面的次数
   			this.countingLoad();
   			this.initList();
+            this.initListBox();
   		},
   		methods: {
             // 统计进入页面的次数
@@ -159,16 +179,22 @@
 				this.countLoadLocalStorage = 0;
   			},
             // 初始化页面，先从本地存储获取
-  			initList: function(){
-  				// 用本地存储，需要跟本地存储进行比较
-  				// 若存在本地缓存，用本地缓存处理
-	  			var list = JSON.parse( localStorage.getItem( 'list' ) );
-	  			if ( list ){
-		  			this.todoList = list.todoList;
-		  			this.completeList = list.completeList;
-	  			}else{
-	  				this.updateLocalStorageList();
-	  			}
+            initList: function(){
+                // 用本地存储，需要跟本地存储进行比较
+                // 若存在本地缓存，用本地缓存处理
+                var list = JSON.parse( localStorage.getItem( 'list' ) );
+                if ( list ){
+                    this.todoList = list.todoList;
+                    this.completeList = list.completeList;
+                }else{
+                    this.updateLocalStorageList();
+                }
+            },
+            // 初始化页面，先从本地存储获取
+  			initListBox: function(){
+                var listBox = document.querySelector( '#todolistBox' );
+                var app = document.querySelector( '#app' );
+                listBox.style.height = app.offsetHeight - listBox.offsetTop + 'px';
   			},
             // 增加代办事务
   			addTodo: function( event ){
