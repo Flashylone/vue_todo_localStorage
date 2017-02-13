@@ -59,39 +59,20 @@
         overflow-y: scroll;
         -webkit-overflow-scrolling: touch;
     }
-    .li-moveout{
-        -webkit-animation: liMoveOut 0.6s ease-in-out 0.1s both;
-        animation: liMoveOut 0.6s ease-in-out 0.1s both;
+    .list-complete-item{
+        transition: all 1s;
+        display: inline-block;
     }
-    @-webkit-keyframes liMoveOut{
-        to{
-            opacity: 0;
-            -webkit-transform: translate3d( 100%, 0px, 0px );
-        }
+    .list-todo-item{
+        transition: all 1s;
+        /*display: inline-block;*/
     }
-    @keyframes liMoveOut{
-        to{
-            opacity: 0;
-            transform: translate3d( 100%, 0px, 0px );
-        }
+    .list-todo-enter, .list-todo-leave-active{
+      opacity: 0;
+      transform: translate3d( 100%, 0px, 0px);
     }
-    .li-movein{
-        opacity: 0;
-        -webkit-transform: translate3d( 100%, 0px, 0px );
-        -webkit-animation: liMoveIn 0.6s ease-in-out 0.1s both;
-        animation: liMoveIn 0.6s ease-in-out 0.1s both;
-    }
-    @-webkit-keyframes liMoveIn{
-        to{
-            opacity: 1;
-            -webkit-transform: translate3d( 0%, 0px, 0px );
-        }
-    }
-    @keyframes liMoveIn{
-        to{
-            opacity: 1;
-            transform: translate3d( 0%, 0px, 0px );
-        }
+    .list-todo-leave-active{
+      position: absolute;
     }
   </style>
 </head>
@@ -103,21 +84,16 @@
 		</div>
 		<input type="text" id="addBtn" placeholder="增加代办事项" v-on:keyup.enter="addTodo">
         <div id="todolistBox">
-            <ul class="todo-list">
-                <transition-group name="custom-classes-transition" enter-active-class="animated-nodelay-enter bounceInDown"
-                leave-active-class="animated-nodelay-leave bounceOut" tag="ul">
-                  <li v-for="( todo, index ) in todoList" v-on:click="makeTodoDone( todo, index, $event )" v-bind:key="todo">
-                      <span>{{ todo.createdAt }}创建</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{{ todo.name }}
-                  </li>
-                  </transition-group>
-            </ul>
-            <ul class="complete-list">
-                <transition-group name="custom-classes-transition" enter-active-class="animated-enter fadeInRight">
-                  <li v-for="item in completeList" v-bind:class="{ 'todo-done': item.isDone }" v-bind:key="item">
-                      <span>{{ item.finishedAt }}完成</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{{ item.name }}
-                  </li>
-                </transition-group>
-            </ul>
+            <transition-group name="list-todo" tag="ul">
+              <li v-for="( item, index ) in todoList" v-on:click="makeTodoDone( item, index, $event )" class="list-todo-item" v-bind:key="item">
+                  <span>{{ item.createdAt }}创建</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{{ item.name }}
+              </li>
+            </transition-group>
+            <transition-group name="listComplete" enter-active-class="animated-enter fadeInRight" tag="ul">
+              <li v-for="item in completeList" class="todo-done list-complete-item" v-bind:key="item" >
+                  <span>{{ item.finishedAt }}完成</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{{ item.name }}
+              </li>
+            </transition-group>
         </div>
 		
 	</section>
@@ -234,10 +210,8 @@
 	  					todo.isDone = true;
                         todo.isMoveIn = false;
                         todo.finishedAt = new Date().toLocaleString();
-                        setTimeout( function(){
-                            v.todoList.splice( index, 1 );
-                            v.addToCompleteList( todo, index );
-                        }, 300);
+                        v.todoList.splice( index, 1 );
+                        v.addToCompleteList( todo, index );
   					}else {
   						return ;
   					}
