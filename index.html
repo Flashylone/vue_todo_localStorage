@@ -4,6 +4,7 @@
   <title>TodoList</title>
   <meta name="viewport" content="width=device-width,maximum-scale=1,minimum-scale=1,user-scalable=no">
   <script src="./assets/js/vue.js"></script>
+  <link href="assets/css/animate.css" rel="stylesheet" type="text/css">
   <style>
     html,body,#app{
         width: 100%;
@@ -103,14 +104,19 @@
 		<input type="text" id="addBtn" placeholder="增加代办事项" v-on:keyup.enter="addTodo">
         <div id="todolistBox">
             <ul class="todo-list">
-                <li v-for="( todo, index ) in todoList" v-bind:class="{ 'li-moveout': todo.isDone }" v-on:click="makeTodoDone( todo, index, $event )">
-                    <span>{{ todo.createdAt }}创建</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{{ todo.name }}
-                </li>
+                <transition-group name="custom-classes-transition" enter-active-class="animated-nodelay-enter bounceInDown"
+                leave-active-class="animated-nodelay-leave bounceOut" tag="ul">
+                  <li v-for="( todo, index ) in todoList" v-on:click="makeTodoDone( todo, index, $event )" v-bind:key="todo">
+                      <span>{{ todo.createdAt }}创建</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{{ todo.name }}
+                  </li>
+                  </transition-group>
             </ul>
             <ul class="complete-list">
-                <li v-for="item in completeList" v-bind:class="[{ 'todo-done': item.isDone },{ 'li-movein': item.isMoveIn }]">
-                    <span>{{ item.finishedAt }}完成</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{{ item.name }}
-                </li>
+                <transition-group name="custom-classes-transition" enter-active-class="animated-enter fadeInRight">
+                  <li v-for="item in completeList" v-bind:class="{ 'todo-done': item.isDone }" v-bind:key="item">
+                      <span>{{ item.finishedAt }}完成</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{{ item.name }}
+                  </li>
+                </transition-group>
             </ul>
         </div>
 		
@@ -229,9 +235,9 @@
                         todo.isMoveIn = false;
                         todo.finishedAt = new Date().toLocaleString();
                         setTimeout( function(){
-    	  					v.todoList.splice( index, 1 );
+                            v.todoList.splice( index, 1 );
                             v.addToCompleteList( todo, index );
-                        }, 1200);
+                        }, 300);
   					}else {
   						return ;
   					}
